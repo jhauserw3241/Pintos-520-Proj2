@@ -58,6 +58,22 @@ syscall_handler (struct intr_frame *f UNUSED)
 	f->eax = sc->func(args[0], args[1], args[2]);
 }
 
+/* Halt system call */
+static void
+sys_halt(void) {
+	//words
+}
+
+/* Exit system call */
+
+/* Execute system call */
+
+/* Wait system call */
+
+/* Create system call */
+
+/* Remove system call */
+
 /* Open system call */
 static int
 sys_open(const char *ufile) {
