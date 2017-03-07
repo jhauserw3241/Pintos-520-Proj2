@@ -3,6 +3,8 @@
 
 #include "lib/user/syscall.h"
 
+struct lock fs_lock;
+
 void syscall_init (void);
 void sys_halt (void);
 void sys_exit (int status);
