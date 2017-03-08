@@ -1,7 +1,7 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <syscall-nr.h>
-/*#include "lib/stdint.h"*/
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
@@ -66,7 +66,7 @@ sys_open(const char *ufile) {
 	struct file_descriptor *fd;
 	int handle = -1;
 
-	fd = malloc(sizeof *fd);
+	fd = malloc(sizeof fd);
 	if (fd != NULL) {
 		lock_acquire(&fs_lock);
 		fd->file = filesys_open(kfile);
