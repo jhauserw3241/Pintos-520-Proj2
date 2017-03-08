@@ -1,6 +1,7 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
 #include <syscall-nr.h>
+/*#include "lib/stdint.h"*/
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
@@ -52,7 +53,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	/* Get the system call arguments */
 	ASSERT(sc->arg_cnt <= sizeof args / sizeof *args);
 	memset(args, 0, sizeof args);
-	copy_in(args, (unit32_t *)f->esp + 1, sizeof *args * sc->arg_cnt);
+	copy_in(args, (uint32_t *)f->esp + 1, sizeof *args * sc->arg_cnt);
 	
 	/* Execute the system call and set the return value */
 	f->eax = sc->func(args[0], args[1], args[2]);
