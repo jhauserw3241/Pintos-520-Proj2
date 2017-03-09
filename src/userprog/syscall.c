@@ -79,7 +79,7 @@ sys_open(const char *ufile) {
 /* Halt system call */
 static void
 sys_halt(void) {
-	// TODO
+	shutdown_power_off();
 }
 
 /* Exit system call */
@@ -91,7 +91,9 @@ sys_exit(int status) {
 /* Execute system call */
 static pid_t
 sys_exec(const char *cmd_line) {
-	// TODO
+	if(process_execute(cmd_line) == TID_ERROR) {
+		return -1;
+	}
 }
 
 /* Wait system call */
