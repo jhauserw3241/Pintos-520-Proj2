@@ -88,7 +88,7 @@ sys_wait(pid_t pid) {
 /* Create system call */
 static bool
 sys_create(const char *file, unsigned initial_size) {
-	// TODO
+	return filesys_create(file, initial_size);
 }
 
 /* Remove system call */
