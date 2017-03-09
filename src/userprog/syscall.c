@@ -94,7 +94,7 @@ sys_create(const char *file, unsigned initial_size) {
 /* Remove system call */
 static bool
 sys_remove(const char *file) {
-	// TODO
+	return filesys_remove(file);
 }
 
 /* Open system call */
