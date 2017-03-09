@@ -75,3 +75,75 @@ sys_open(const char *ufile) {
 		}
 	}
 }
+
+/* Halt system call */
+static void
+sys_halt() {
+	// TODO
+}
+
+/* Exit system call */
+static void
+sys_exit(int status) {
+	// TODO
+}
+
+/* Execute system call */
+static pid_t
+sys_exec(const char *cmd_line) {
+	// TODO
+}
+
+/* Wait system call */
+static int
+sys_wait(pid_t pid) {
+	//TODO
+}
+
+/* Create system call */
+static bool
+sys_create(const char *file, unsigned initial_size) {
+	// TODO
+}
+
+/* Remove system call */
+static bool
+sys_remove(const char *file) {
+	// TODO
+}
+
+/* Get file size system call */
+static int
+sys_filesize(int fd) {
+	// TODO
+}
+
+/* Read system call */
+static int
+sys_read(int fd, void *buffer, unsigned size) {
+	// TODO
+}
+
+/* Write system call */
+static int
+sys_write(int fd, const void *buffer, unsigned size) {
+	// TODO
+}
+
+/* Seek system call */
+static void
+sys_seek(int fd, unsigned position) {
+	// TODO
+}
+
+/* Tell system call */
+static unsigned
+sys_tell(int fd) {
+	// TODO
+}
+
+/* Close system call */
+static void
+sys_close(int fd) {
+	// TODO
+}
