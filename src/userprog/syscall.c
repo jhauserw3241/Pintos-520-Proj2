@@ -59,23 +59,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 	f->eax = sc->func(args[0], args[1], args[2]);
 }
 
-/* Open system call */
-static int
-sys_open(const char *ufile) {
-	char *kfile = copy_in_string(ufile);
-	struct file_descriptor *fd;
-	int handle = -1;
-
-	fd = malloc(sizeof *fd);
-	if (fd != NULL) {
-		lock_acquire(&fs_lock);
-		fd->file = filesys_open(kfile);
-		if(fd->file != NULL) {
-			//add to list of fd's associated with thread
-		}
-	}
-}
-
 /* Halt system call */
 static void
 sys_halt() {
@@ -110,6 +93,23 @@ sys_create(const char *file, unsigned initial_size) {
 static bool
 sys_remove(const char *file) {
 	// TODO
+}
+
+/* Open system call */
+static int
+sys_open(const char *ufile) {
+	char *kfile = copy_in_string(ufile);
+	struct file_descriptor *fd;
+	int handle = -1;
+
+	fd = malloc(sizeof *fd);
+	if (fd != NULL) {
+		lock_acquire(&fs_lock);
+		fd->file = filesys_open(kfile);
+		if(fd->file != NULL) {
+			//add to list of fd's associated with thread
+		}
+	}
 }
 
 /* Get file size system call */
