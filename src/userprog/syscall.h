@@ -4,6 +4,9 @@
 #include "lib/user/syscall.h"
 
 struct lock fs_lock;
+struct file_descriptor {
+	int file;
+};
 
 void syscall_init (void);
 void sys_halt (void);

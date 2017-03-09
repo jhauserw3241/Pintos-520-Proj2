@@ -66,11 +66,12 @@ sys_open(const char *ufile) {
 	struct file_descriptor *fd;
 	int handle = -1;
 
-	fd = malloc(sizeof fd);
+	fd = malloc(sizeof *fd);
 	if (fd != NULL) {
 		lock_acquire(&fs_lock);
 		fd->file = filesys_open(kfile);
-		if(fd->file != NULL)
+		if(fd->file != NULL) {
 			//add to list of fd's associated with thread
+		}
 	}
 }
