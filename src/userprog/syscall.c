@@ -117,7 +117,7 @@ sys_open(const char *ufile) {
 /* Get file size system call */
 static int
 sys_filesize(int fd) {
-	// TODO
+	return file_size(fd->file);
 }
 
 /* Read system call */
