@@ -78,7 +78,7 @@ sys_open(const char *ufile) {
 
 /* Halt system call */
 static void
-sys_halt() {
+sys_halt(void) {
 	// TODO
 }
 
