@@ -5,10 +5,6 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
-// Create list of tracked files
-#define FILE_LIST_SIZE 1000
-int fileListSizeMultiplier = 1;
-struct file_elem files[FILE_LIST_SIZE];
 int nextFileId = 0;
 
 static void syscall_handler (struct intr_frame *);
@@ -18,9 +14,6 @@ syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   lock_init(&fs_lock);
-
-  // Clear out file list
-  memset(files, 0, sizeof files);
 }
 
 static void
@@ -166,23 +159,77 @@ sys_close(int fd) {
 /* Add new file to file list */
 void
 add_new_file_to_list(const char *name) {
-	struct file_elem newElem;
-	newElem.file_info.file = nextFileId;
-	newElem.name = name;
-	files[nextFileId] = newElem;
+	node_t *head = NULL;
+	head = malloc(sizeof(node_t));
+	if(head == NULL) {
+		return;
+	}
+
+	head->elem = create_file_elem(name);
+	head->next = NULL;
+}
+
+/* Find file in linked list */
+struct file_elem
+find_file_info(node_t *head, int id) {
+	node_t *current = head;
+	while(current->next != NULL) {
+		if(current->elem.file_info.file == id) {
+			return current->elem;
+		}
+		current = current->next;
+	}
+
+	return create_file_elem(NULL);
+}
+
+/* Add new file element to end of linked list */
+void
+add_file_to_end(node_t *head, const char *name) {
+	node_t *current = head;
+
+	/* Get to end of list */
+	while(current->next != NULL) {
+		current = current->next;
+	}
+
+	/* Add new elem */
+	current->next = malloc(sizeof(node_t));
+	current->next->elem = create_file_elem(name);
+	current->next->next = NULL;
+}
+
+/* Create new file element */
+struct file_elem
+create_file_elem(const char *name) {
+	/* Create elem */
+	struct file_elem elem;
+	elem.file_info.file = nextFileId;
+	elem.name = name;
+
+	/* Update index */
 	nextFileId++;
 
-	/* Increase size of file list, if necessary */
-	if(nextFileId >= (FILE_LIST_SIZE * fileListSizeMultiplier)) {
-		struct file_elem temp[(FILE_LIST_SIZE * fileListSizeMultiplier)];
-		for(int i = 0; i < (FILE_LIST_SIZE * fileListSizeMultiplier); i++) {
-			temp[i] = files[i];
-		}
+	return elem;
+}
 
-		fileListSizeMultiplier++;
-		struct file_elem files[(FILE_LIST_SIZE * fileListSizeMultiplier)];
-		for(int i = 0; i< (FILE_LIST_SIZE * (fileListSizeMultiplier -1)); i++) {
-			files[i] = temp[i];
+/* Remove elem by id */
+void
+remove_elem_from_list(node_t *head, int id) {
+	node_t *current = head;
+
+	while(current->next != NULL) {
+		if(current->elem.file_info.file == id) {
+			break;
 		}
+		current = current->next;
 	}
+
+	if(current->next == NULL) {
+		return;
+	}
+
+	node_t *temp = current->next;
+	current->next = temp->next;
+	free(temp);
 }
