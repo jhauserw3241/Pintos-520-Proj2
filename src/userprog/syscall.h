@@ -3,11 +3,19 @@
 
 #include "lib/user/syscall.h"
 
+// Define new structs for code Dan provided
 struct lock fs_lock;
 struct file_descriptor {
 	int file;
 };
 
+// Define new structs for file tracking
+struct file_elem {
+	struct file_descriptor file_info; 	/* File id */
+	const char *name; 			/* File name */
+};
+
+// Define system call functions Dan provided
 void syscall_init (void);
 static void sys_halt (void);
 static void sys_exit (int status);

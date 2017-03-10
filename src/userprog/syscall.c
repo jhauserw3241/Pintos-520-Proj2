@@ -5,6 +5,11 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
+// Create list of tracked files
+#define FILE_LIST_SIZE 100
+static struct file_elem files[FILE_LIST_SIZE];
+int nextFileId = 0;
+
 static void syscall_handler (struct intr_frame *);
 
 void
@@ -12,6 +17,9 @@ syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   lock_init(&fs_lock);
+
+  // Clear out file list
+  memset(files, 0, sizeof files);
 }
 
 static void
@@ -88,7 +96,15 @@ sys_wait(pid_t pid) {
 /* Create system call */
 static bool
 sys_create(const char *file, unsigned initial_size) {
-	return filesys_create(file, initial_size);
+	bool result = filesys_create(file, initial_size);
+	if(result) {
+		struct file_elem newElem;
+		newElem.file_info.file = nextFileId;
+		newElem.name = file;
+		files[nextFileId] = newElem;
+		nextFileId++;
+	}
+	return result;
 }
 
 /* Remove system call */
@@ -123,7 +139,7 @@ sys_filesize(int fd) {
 /* Read system call */
 static int
 sys_read(int fd, void *buffer, unsigned size) {
-	// TODO
+	return file_read(fd->file, buffer, size);
 }
 
 /* Write system call */
