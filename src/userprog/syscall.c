@@ -6,8 +6,9 @@
 #include "threads/thread.h"
 
 // Create list of tracked files
-#define FILE_LIST_SIZE 100
-static struct file_elem files[FILE_LIST_SIZE];
+#define FILE_LIST_SIZE 1000
+int fileListSizeMultiplier = 1;
+struct file_elem files[FILE_LIST_SIZE];
 int nextFileId = 0;
 
 static void syscall_handler (struct intr_frame *);
@@ -98,11 +99,7 @@ static bool
 sys_create(const char *file, unsigned initial_size) {
 	bool result = filesys_create(file, initial_size);
 	if(result) {
-		struct file_elem newElem;
-		newElem.file_info.file = nextFileId;
-		newElem.name = file;
-		files[nextFileId] = newElem;
-		nextFileId++;
+		add_new_file_to_list(file);
 	}
 	return result;
 }
@@ -164,4 +161,28 @@ sys_tell(int fd) {
 static void
 sys_close(int fd) {
 	// TODO
+}
+
+/* Add new file to file list */
+void
+add_new_file_to_list(const char *name) {
+	struct file_elem newElem;
+	newElem.file_info.file = nextFileId;
+	newElem.name = name;
+	files[nextFileId] = newElem;
+	nextFileId++;
+
+	/* Increase size of file list, if necessary */
+	if(nextFileId >= (FILE_LIST_SIZE * fileListSizeMultiplier)) {
+		struct file_elem temp[(FILE_LIST_SIZE * fileListSizeMultiplier)];
+		for(int i = 0; i < (FILE_LIST_SIZE * fileListSizeMultiplier); i++) {
+			temp[i] = files[i];
+		}
+
+		fileListSizeMultiplier++;
+		struct file_elem files[(FILE_LIST_SIZE * fileListSizeMultiplier)];
+		for(int i = 0; i< (FILE_LIST_SIZE * (fileListSizeMultiplier -1)); i++) {
+			files[i] = temp[i];
+		}
+	}
 }
