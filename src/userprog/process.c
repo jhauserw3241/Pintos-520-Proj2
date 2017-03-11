@@ -19,7 +19,7 @@
 #include "threads/vaddr.h"
 
 static thread_func start_process NO_RETURN;
-static bool load (const char *cmdline, void (**eip) (void), void **esp);
+static bool load (const char *cmdline, void (**eip) (void), void **esp, char** save_ptr);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -466,7 +466,7 @@ setup_stack (void **esp, const char* file_name)
     //allocate stack frame
     *esp -= strlen(token) + 1;
     argv[argc] = *esp;
-    argc++:
+    argc++;
 
     /*
     if(argc >= 64)
