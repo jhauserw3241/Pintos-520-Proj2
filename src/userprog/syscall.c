@@ -148,7 +148,11 @@ sys_read(int fd, void *buffer, unsigned size) {
 /* Write system call */
 static int
 sys_write(int fd, const void *buffer, unsigned size) {
-	// TODO
+	struct file_elem elem = find_file_info(fd);
+	if(elem.name != NULL) {
+		return file_write(elem.name, buffer, size);
+	}
+	return 0;
 }
 
 /* Seek system call */
