@@ -152,7 +152,10 @@ static int
 sys_write(int fd, const void *buffer, unsigned size) {
 	struct file_elem elem = find_file_info(fd);
 	if(elem.name != NULL) {
-		return file_write(elem.name, buffer, size);
+		lock_acquire(&fs_lock);
+		int status = file_write(elem.name, buffer, size);
+		lock_release(&fs_lock);
+		return status;
 	}
 	return 0;
 }
