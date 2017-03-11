@@ -132,15 +132,17 @@ sys_filesize(int fd) {
 	if(elem.name != NULL) {
 		return file_size(elem.file_info.file);
 	}
-	else {
-		return 0;
-	}
+	return 0;
 }
 
 /* Read system call */
 static int
 sys_read(int fd, void *buffer, unsigned size) {
-	return file_read(fd->file, buffer, size);
+	struct file_elem elem = find_file_info(fd);
+	if(elem.name != NULL) {	
+		return file_read(elem.name, buffer, size);
+	}
+	return 0;
 }
 
 /* Write system call */
