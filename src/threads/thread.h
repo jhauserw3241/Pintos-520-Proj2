@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -137,5 +138,26 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+
+/* Project 2 Additions */
+struct file *bin_file;		/* Executable. */
+/* Owned by syscall.c */
+struct list fds;		/* List of file descriptors. */
+int next_handle;		/* Next handle value. */
+/* Track the completion of a process.
+   Reference held by both the parent, in its 'children' list,
+   and by the child, in its 'wait_status' pointer. */
+struct wait_status
+{
+	struct list_elem elem;		/* 'children' list element. */
+	struct lock lock;		/* Protects ref_cnt. */
+	int ref_cnt;			/* 2=child and parent both alive,
+					   1=either child or parent alive,
+					   0=child and parent both dead.*/
+	tid_t tid;			/* Child thread id. */
+	int exit_code;			/* Child exit code, if dead. */
+	struct semaphore dead;		/* 0=child alive,
+					   1=child dead. */
+};
 
 #endif /* threads/thread.h */
