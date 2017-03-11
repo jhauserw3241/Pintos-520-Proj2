@@ -453,6 +453,7 @@ setup_stack (void **esp, const char* file_name)
   }
 
   //inspiration from http://dynamicvoltage.blogspot.com/search/label/Operating%20Systems
+  //inspiration from https://github.com/muhammadzaheer/pintOS/blob/master/userprog/process.c
   char* token;
   char* save_ptr;
   int argv_size = 2;
