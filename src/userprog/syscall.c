@@ -179,7 +179,7 @@ static void
 sys_close(int fd) {
 	struct file_elem elem = find_file_info(fd);
 	if(elem.name != NULL) {
-		return file_close(elem.name);
+		file_close(elem.name);
 	}
 }
 
