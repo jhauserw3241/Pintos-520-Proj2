@@ -62,19 +62,19 @@ syscall_handler (struct intr_frame *f UNUSED)
 	f->eax = sc->func(args[0], args[1], args[2]);
 }
 
-/* Halt system call */
+/* Terminate Pintos */
 static void
 sys_halt(void) {
 	shutdown_power_off();
 }
 
-/* Exit system call */
+/* Terminate current user process */
 static void
 sys_exit(int status) {
 	// TODO
 }
 
-/* Execute system call */
+/* Run given executable */
 static pid_t
 sys_exec(const char *cmd_line) {
 	if(process_execute(cmd_line) == TID_ERROR) {
@@ -82,13 +82,13 @@ sys_exec(const char *cmd_line) {
 	}
 }
 
-/* Wait system call */
+/* Wait for child process */
 static int
 sys_wait(pid_t pid) {
 	//TODO
 }
 
-/* Create system call */
+/* Create new file */
 static bool
 sys_create(const char *file, unsigned initial_size) {
 	bool result = filesys_create(file, initial_size);
@@ -98,7 +98,7 @@ sys_create(const char *file, unsigned initial_size) {
 	return result;
 }
 
-/* Remove system call */
+/* Remove file with given name */
 static bool
 sys_remove(const char *file) {
 	bool result = filesys_remove(file);
@@ -108,7 +108,7 @@ sys_remove(const char *file) {
 	return result;
 }
 
-/* Open system call */
+/* Open file with given name */
 static int
 sys_open(const char *ufile) {
 	char *kfile = copy_in_string(ufile);
@@ -125,7 +125,7 @@ sys_open(const char *ufile) {
 	}
 }
 
-/* Get file size system call */
+/* Get file size */
 static int
 sys_filesize(int fd) {
 	struct file_elem elem = find_file_info(fd);
@@ -135,7 +135,7 @@ sys_filesize(int fd) {
 	return 0;
 }
 
-/* Read system call */
+/* Read x bytes from given file into the buffer */
 static int
 sys_read(int fd, void *buffer, unsigned size) {
 	struct file_elem elem = find_file_info(fd);
@@ -145,7 +145,7 @@ sys_read(int fd, void *buffer, unsigned size) {
 	return 0;
 }
 
-/* Write system call */
+/* Write data from buffer to file */
 static int
 sys_write(int fd, const void *buffer, unsigned size) {
 	struct file_elem elem = find_file_info(fd);
@@ -155,7 +155,7 @@ sys_write(int fd, const void *buffer, unsigned size) {
 	return 0;
 }
 
-/* Seek system call */
+/* Changes next byte to be read or written in open file */
 static void
 sys_seek(int fd, unsigned position) {
 	struct file_elem elem = find_file_info(fd);
@@ -164,7 +164,7 @@ sys_seek(int fd, unsigned position) {
 	}
 }
 
-/* Tell system call */
+/* Get position of next byte to be read or written to in open file */
 static unsigned
 sys_tell(int fd) {
 	struct file_elem elem = find_file_info(fd);
@@ -174,7 +174,7 @@ sys_tell(int fd) {
 	return 0;
 }
 
-/* Close system call */
+/* Close file */
 static void
 sys_close(int fd) {
 	struct file_elem elem = find_file_info(fd);
