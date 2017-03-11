@@ -4,9 +4,10 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "userprog/process.h"
 
 node_t *head;
-int nextFileId = 0;
+int nextFileId = 2;
 
 static void syscall_handler (struct intr_frame *);
 
@@ -122,6 +123,7 @@ sys_open(const char *ufile) {
 		if(fd->file != NULL) {
 			//add to list of fd's associated with thread
 		}
+		lock_release(&fs_lock);
 	}
 }
 
@@ -241,11 +243,11 @@ create_file_elem(const char *name) {
 
 /* Remove elem by id */
 void
-remove_elem_from_list(int id) {
+remove_elem_from_list(const char *name) {
 	node_t *current = head;
 
 	while(current->next != NULL) {
-		if(current->elem.file_info.file == id) {
+		if(current->elem.name == name) {
 			break;
 		}
 		current = current->next;

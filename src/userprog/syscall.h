@@ -41,6 +41,6 @@ struct file_elem create_file_elem(const char *name);
 struct file_elem find_file_info(int id);
 void add_new_file_to_list(const char *name);
 void add_file_to_end(const char *name);
-void remove_elem_from_list(int id);
+void remove_elem_from_list(const char *name);
 
 #endif /* userprog/syscall.h */
