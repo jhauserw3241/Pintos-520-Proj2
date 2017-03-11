@@ -158,7 +158,7 @@ sys_write(int fd, const void *buffer, unsigned size) {
 /* Seek system call */
 static void
 sys_seek(int fd, unsigned position) {
-	struct file_elem elem = file_find_info(fd);
+	struct file_elem elem = find_file_info(fd);
 	if(elem.name != NULL) {
 		return file_seek(elem.name, position);
 	}
@@ -167,7 +167,11 @@ sys_seek(int fd, unsigned position) {
 /* Tell system call */
 static unsigned
 sys_tell(int fd) {
-	// TODO
+	struct file_elem elem = find_file_info(fd);
+	if(elem.name != NULL) {
+		return file_tell(elem.name);
+	}
+	return 0;
 }
 
 /* Close system call */
