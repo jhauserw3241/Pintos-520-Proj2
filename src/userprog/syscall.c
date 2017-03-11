@@ -177,7 +177,10 @@ sys_tell(int fd) {
 /* Close system call */
 static void
 sys_close(int fd) {
-	// TODO
+	struct file_elem elem = find_file_info(fd);
+	if(elem.name != NULL) {
+		return file_close(elem.name);
+	}
 }
 
 /* Add new file to file list */
