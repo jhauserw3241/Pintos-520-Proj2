@@ -128,7 +128,13 @@ sys_open(const char *ufile) {
 /* Get file size system call */
 static int
 sys_filesize(int fd) {
-	return file_size(fd->file);
+	struct file_elem elem = find_file_info(fd);
+	if(elem.name != NULL) {
+		return file_size(elem.file_info.file);
+	}
+	else {
+		return 0;
+	}
 }
 
 /* Read system call */
