@@ -5,6 +5,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
+node_t *head;
 int nextFileId = 0;
 
 static void syscall_handler (struct intr_frame *);
@@ -159,7 +160,6 @@ sys_close(int fd) {
 /* Add new file to file list */
 void
 add_new_file_to_list(const char *name) {
-	node_t *head = NULL;
 	head = malloc(sizeof(node_t));
 	if(head == NULL) {
 		return;
@@ -171,7 +171,7 @@ add_new_file_to_list(const char *name) {
 
 /* Find file in linked list */
 struct file_elem
-find_file_info(node_t *head, int id) {
+find_file_info(int id) {
 	node_t *current = head;
 	while(current->next != NULL) {
 		if(current->elem.file_info.file == id) {
@@ -185,7 +185,7 @@ find_file_info(node_t *head, int id) {
 
 /* Add new file element to end of linked list */
 void
-add_file_to_end(node_t *head, const char *name) {
+add_file_to_end(const char *name) {
 	node_t *current = head;
 
 	/* Get to end of list */
@@ -215,7 +215,7 @@ create_file_elem(const char *name) {
 
 /* Remove elem by id */
 void
-remove_elem_from_list(node_t *head, int id) {
+remove_elem_from_list(int id) {
 	node_t *current = head;
 
 	while(current->next != NULL) {
