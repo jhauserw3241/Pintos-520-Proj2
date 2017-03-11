@@ -101,7 +101,11 @@ sys_create(const char *file, unsigned initial_size) {
 /* Remove system call */
 static bool
 sys_remove(const char *file) {
-	return filesys_remove(file);
+	bool result = filesys_remove(file);
+	if(result) {
+		remove_elem_from_list(file);
+	}
+	return result;
 }
 
 /* Open system call */
