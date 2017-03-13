@@ -14,6 +14,9 @@ int nextFileId = 2;
 /* Private function declarations */
 static void syscall_handler (struct intr_frame *);
 
+void copy_in(unsigned *var, uint32_t *start, int size);
+void copy_in_string(const char *uname);
+
 void add_file(const char *name, struct file_descriptor fd);
 void update_file_list(const char *name, struct file_descriptor fd);
 void update_file_id_list(file_node *current, struct file_descriptor fd);
@@ -82,6 +85,23 @@ syscall_handler (struct intr_frame *f UNUSED)
 	
 	/* Execute the system call and set the return value */
 	f->eax = sc->func(args[0], args[1], args[2]);
+}
+
+/* Copy a certain section of memory from the user space to the kernel space */
+void
+copy_in(unsigned *var, uint32_t *start, int size) {
+	for(int i = 0; i < (size / 4); i++) {
+		/* Inspiration from: https://github.com/ryantimwilson/Pintos-Project-2/blob/master/src/userprog/syscall.c */
+		int *ptr = (int *) start + i;
+		//check_valid_ptr((const void *) ptr);
+		var[i] = *ptr;
+	}
+}
+
+/* Copy a string from user space to kernel space */
+void
+copy_in_string(const char *uname) {
+
 }
 
 /* Terminate Pintos */
