@@ -94,6 +94,9 @@ sys_halt(void) {
 static void
 sys_exit(int status) {
 	pid_t cur = getpid();
+	if (getppid() != NULL) {
+		//give parent status
+	}
 	// printf("%s: exit(%d)\n", cmd_line passed in process_exec, status);
 }
 
