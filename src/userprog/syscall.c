@@ -130,7 +130,7 @@ static void
 sys_exit(int status) {
 	struct thread *cur = current_thread();
 	printf("%s: exit(%d)\n", cur->name, status);
-	process_exit(status);
+	process_exit();
 }
 
 /* Run given executable */
@@ -214,9 +214,9 @@ sys_write(int fd, const void *buffer, unsigned size) {
 	struct file *file = get_file_by_id(fd);
 	if(file != NULL) {
 		if (*buffer == NULL)			//supposed to stop writing if buffer is invalid
-			file_deny_write();
+			file_deny_write(file);
 		else							//makes sure allow_write is set otherwise
-			file_allow_write();
+			file_allow_write(file);
 		lock_acquire(&fs_lock);
 		int status = file_write(file, buffer, size);
 		lock_release(&fs_lock);
