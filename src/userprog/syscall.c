@@ -93,7 +93,8 @@ sys_halt(void) {
 /* Terminate current user process */
 static void
 sys_exit(int status) {
-	// TODO
+	pid_t cur = getpid();
+	// printf("%s: exit(%d)\n", cmd_line passed in process_exec, status);
 }
 
 /* Run given executable */
@@ -176,6 +177,10 @@ static int
 sys_write(int fd, const void *buffer, unsigned size) {
 	struct file *file = get_file_by_id(fd);
 	if(file != NULL) {
+		if (*buffer == NULL)			//supposed to stop writing if buffer is invalid
+			file_deny_write();
+		else							//makes sure allow_write is set otherwise
+			file_allow_write();
 		lock_acquire(&fs_lock);
 		int status = file_write(file, buffer, size);
 		lock_release(&fs_lock);
