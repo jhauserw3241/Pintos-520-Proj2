@@ -4,11 +4,33 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "userprog/process.h"
+#include "filesys/filesys.h"
 
-node_t *head;
-int nextFileId = 0;
+/* Variables to keep track of files being used */
+file_node *head = NULL;
+int nextFileId = 2;
 
+/* Private function declarations */
 static void syscall_handler (struct intr_frame *);
+
+void add_file(const char *name, struct file_descriptor fd);
+void update_file_list(const char *name, struct file_descriptor fd);
+void update_file_id_list(file_node *current, struct file_descriptor fd);
+file_node start_file_list(const char *name, struct file_descriptor fd);
+void add_file_to_end(const char *name, struct file_descriptor fd);
+fd_node * start_fd_list(struct file_descriptor fd);
+void add_fd_to_end(fd_node *head, struct file_descriptor fd);
+bool is_fd_in_list(fd_node *head, int id);
+struct file * get_file_by_id(int id);
+struct file_elem get_file_elem_by_id(int id);
+struct file_elem get_file_elem_by_name(const char *name);
+file_node * get_file_node(const char *name);
+file_node * get_file_node_before(const char *name);
+struct file_elem create_file_elem(const char *name, struct file_descriptor fd);
+bool remove_file_node(const char *name);
+
+/* Function definitions */
 
 void
 syscall_init (void) 
@@ -62,19 +84,19 @@ syscall_handler (struct intr_frame *f UNUSED)
 	f->eax = sc->func(args[0], args[1], args[2]);
 }
 
-/* Halt system call */
+/* Terminate Pintos */
 static void
 sys_halt(void) {
 	shutdown_power_off();
 }
 
-/* Exit system call */
+/* Terminate current user process */
 static void
 sys_exit(int status) {
 	// TODO
 }
 
-/* Execute system call */
+/* Run given executable */
 static pid_t
 sys_exec(const char *cmd_line) {
 	if(process_execute(cmd_line) == TID_ERROR) {
@@ -82,123 +104,159 @@ sys_exec(const char *cmd_line) {
 	}
 }
 
-/* Wait system call */
+/* Wait for child process */
 static int
 sys_wait(pid_t pid) {
 	//TODO
 }
 
-/* Create system call */
+/* Create new file */
 static bool
 sys_create(const char *file, unsigned initial_size) {
-	bool result = filesys_create(file, initial_size);
-	if(result) {
-		add_new_file_to_list(file);
-	}
-	return result;
+	return filesys_create(file, initial_size);
 }
 
-/* Remove system call */
+/* Remove file with given name */
 static bool
 sys_remove(const char *file) {
 	bool result = filesys_remove(file);
 	if(result) {
-		remove_elem_from_list(file);
+		remove_file_node(file);
 	}
 	return result;
 }
 
-/* Open system call */
+/* Open file with given name */
 static int
 sys_open(const char *ufile) {
 	char *kfile = copy_in_string(ufile);
 	struct file_descriptor *fd;
 	int handle = -1;
 
+	/* Update file_descriptor for relevant file */
 	fd = malloc(sizeof *fd);
 	if (fd != NULL) {
 		lock_acquire(&fs_lock);
+		fd->id = nextFileId;
 		fd->file = filesys_open(kfile);
 		if(fd->file != NULL) {
-			//add to list of fd's associated with thread
+			update_file_list(ufile, *fd);
 		}
+		lock_release(&fs_lock);
+
+		nextFileId++;
+		return nextFileId - 1;
 	}
+
+	return handle;
 }
 
-/* Get file size system call */
+/* Get file size */
 static int
 sys_filesize(int fd) {
-	struct file_elem elem = find_file_info(fd);
-	if(elem.name != NULL) {
-		return file_size(elem.file_info.file);
+	struct file *file = get_file_by_id(fd);
+	if(file != NULL) {
+		return file_length(file);
 	}
 	return 0;
 }
 
-/* Read system call */
+/* Read x bytes from given file into the buffer */
 static int
 sys_read(int fd, void *buffer, unsigned size) {
-	struct file_elem elem = find_file_info(fd);
-	if(elem.name != NULL) {	
-		return file_read(elem.name, buffer, size);
+	struct file *file = get_file_by_id(fd);
+	if(file != NULL) {	
+		return file_read(file, buffer, size);
 	}
 	return 0;
 }
 
-/* Write system call */
+/* Write data from buffer to file */
 static int
 sys_write(int fd, const void *buffer, unsigned size) {
-	// TODO
+	struct file *file = get_file_by_id(fd);
+	if(file != NULL) {
+		lock_acquire(&fs_lock);
+		int status = file_write(file, buffer, size);
+		lock_release(&fs_lock);
+		return status;
+	}
+	return 0;
 }
 
-/* Seek system call */
+/* Changes next byte to be read or written in open file */
 static void
 sys_seek(int fd, unsigned position) {
-	// TODO
+	struct file *file = get_file_by_id(fd);
+	if(file != NULL) {
+		return file_seek(file, position);
+	}
 }
 
-/* Tell system call */
+/* Get position of next byte to be read or written to in open file */
 static unsigned
 sys_tell(int fd) {
-	// TODO
+	struct file *file = get_file_by_id(fd);
+	if(file != NULL) {
+		return file_tell(file);
+	}
+	return 0;
 }
 
-/* Close system call */
+/* Close file */
 static void
 sys_close(int fd) {
-	// TODO
+	struct file *file = get_file_by_id(fd);
+	if(file != NULL) {
+		file_close(file);
+	}
 }
 
 /* Add new file to file list */
 void
-add_new_file_to_list(const char *name) {
-	head = malloc(sizeof(node_t));
+add_file(const char *name, struct file_descriptor fd) {
+	if(head == NULL) {
+		start_file_list(name, fd);
+	}
+	else {
+		add_file_to_end(name, fd);
+	}
+}
+
+/* Update file list with new file information */
+void
+update_file_list(const char *name, struct file_descriptor fd) {
+	file_node *current = get_file_node(name);
+	if(current != NULL) {
+		update_file_id_list(current, fd);
+	}
+	else {
+		add_file(name, fd);
+	}
+}
+
+/* Update file node with new id */
+void
+update_file_id_list(file_node *current, struct file_descriptor fd) {
+	add_fd_to_end(current->elem.fds, fd);
+}
+
+/* Add new file to file list */
+file_node
+start_file_list(const char *name, struct file_descriptor fd) {
+	head = malloc(sizeof(file_node));
 	if(head == NULL) {
 		return;
 	}
 
-	head->elem = create_file_elem(name);
+	head->elem = create_file_elem(name, fd);
 	head->next = NULL;
 }
 
-/* Find file in linked list */
-struct file_elem
-find_file_info(int id) {
-	node_t *current = head;
-	while(current->next != NULL) {
-		if(current->elem.file_info.file == id) {
-			return current->elem;
-		}
-		current = current->next;
-	}
-
-	return create_file_elem(NULL);
-}
-
-/* Add new file element to end of linked list */
+/* Add file to end of file list */
 void
-add_file_to_end(const char *name) {
-	node_t *current = head;
+add_file_to_end(const char *name, struct file_descriptor fd) {
+	file_node *current = head;
 
 	/* Get to end of list */
 	while(current->next != NULL) {
@@ -206,42 +264,180 @@ add_file_to_end(const char *name) {
 	}
 
 	/* Add new elem */
-	current->next = malloc(sizeof(node_t));
-	current->next->elem = create_file_elem(name);
+	current->next = malloc(sizeof(file_node));
+	current->next->elem = create_file_elem(name, fd);
 	current->next->next = NULL;
 }
 
-/* Create new file element */
-struct file_elem
-create_file_elem(const char *name) {
-	/* Create elem */
-	struct file_elem elem;
-	elem.file_info.file = nextFileId;
-	elem.name = name;
+/* Start file_descriptor list */
+fd_node *
+start_fd_list(struct file_descriptor fd) {
+	fd_node *cur;
+	cur = malloc(sizeof(fd_node));
+	if(cur->fd.file == NULL) {
+		return;
+	}
 
-	/* Update index */
-	nextFileId++;
-
-	return elem;
+	cur->fd = fd;
+	cur->next = NULL;
+	return cur;
 }
 
-/* Remove elem by id */
+/* Add new file_descriptor element to end of list */
 void
-remove_elem_from_list(int id) {
-	node_t *current = head;
+add_fd_to_end(fd_node *head, struct file_descriptor fd) {
+	fd_node *current = head;
+
+	/* Get to end of list */
+	while(current->next != NULL) {
+		current = current->next;
+	}
+
+	/* Add new elem */
+	current->next = malloc(sizeof(fd_node));
+	current->next->fd = fd;
+	current->next->next = NULL;
+}
+
+/* Check if file_descriptor is in list */
+bool
+is_fd_in_list(fd_node *head, int id) {
+	fd_node *current = head;
 
 	while(current->next != NULL) {
-		if(current->elem.file_info.file == id) {
-			break;
+		if(current->fd.id == id) {
+			return true;
 		}
 		current = current->next;
 	}
 
-	if(current->next == NULL) {
-		return;
+	if(current->fd.id == id) {
+		return true;
 	}
 
-	node_t *temp = current->next;
+	return false;
+}
+
+/* Get file from file_descriptor in list */
+struct file *
+get_file_by_id(int id) {
+	file_node *current = head;
+
+	while(current->next != NULL) {
+		if(current->elem.fds->fd.id == id) {
+			return current->elem.fds->fd.file;
+		}
+		current = current->next;
+	}
+
+	if(current->elem.fds->fd.file == id) {
+		return current->elem.fds->fd.file;
+	}
+
+	return NULL;
+}
+
+/* Find file in linked list by id */
+struct file_elem
+get_file_elem_by_id(int id) {
+	file_node *current = head;
+	while(current->next != NULL) {
+		if(is_fd_in_list(current->elem.fds, id)) {
+			return current->elem;
+		}
+		current = current->next;
+	}
+
+	if(is_fd_in_list(current->elem.fds, id)) {
+		return current->elem;
+	}
+
+	struct file_descriptor fd;
+	fd.id = -1;
+	fd.file = NULL;
+
+	return create_file_elem(NULL, fd);
+}
+
+/* Find file info in linked list by name */
+struct file_elem
+get_file_elem_by_name(const char *name) {
+	file_node *current = head;
+	while(current->next != NULL) {
+		if(current->elem.name == name) {
+			return current->elem;
+		}
+		current = current->next;
+	}
+
+	if(current->elem.name == name) {
+		return current->elem;
+	}
+
+	struct file_descriptor fd;
+	fd.id = -1;
+	fd.file = NULL;
+
+	return create_file_elem(NULL, fd);
+}
+
+/* Get file node */
+file_node *
+get_file_node(const char *name) {
+	file_node *current = head;
+
+	while(current->next != NULL) {
+		if(current->elem.name == name) {
+			return current;
+		}
+		current = current->next;
+	}
+
+	if((current->next == NULL) && (current->elem.name != name)) {
+		return NULL;
+	}
+
+	return current;
+}
+
+/* Get file node before specified file node */
+file_node *
+get_file_node_before(const char *name) {
+	file_node *current = head;
+
+	while(current->next != NULL) {
+		if(current->next->elem.name == name) {
+			return current;
+		}
+		current = current->next;
+	}
+
+	/*struct file_node null_node;
+	null_node.elem.name = NULL;*/
+	return NULL;
+}
+
+/* Create new file element */
+struct file_elem
+create_file_elem(const char *name, struct file_descriptor fd) {
+	struct file_elem elem;
+	elem.fds = start_fd_list(fd);
+	elem.name = name;
+
+	return elem;
+}
+
+/* Remove file node from list of tracked files */
+bool
+remove_file_node(const char *name) {
+	file_node *current = get_file_node_before(name);
+
+	/* Return failure if node doesn't exist */
+	if(current->elem.name == NULL) {
+		return false;
+	}
+
+	file_node *temp = current->next;
 	current->next = temp->next;
-	free(temp);
+	return true;
 }
