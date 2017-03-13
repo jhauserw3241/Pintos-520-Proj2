@@ -4,6 +4,7 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/vaddr.h"
 #include "userprog/process.h"
 #include "filesys/filesys.h"
 
@@ -14,6 +15,7 @@ int nextFileId = 2;
 /* Private function declarations */
 static void syscall_handler (struct intr_frame *);
 
+bool check_valid_addr(uint32_t *addr);
 void copy_in(unsigned *var, uint32_t *start, int size);
 char * copy_in_string(const char *uname);
 
@@ -72,6 +74,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 	unsigned call_nr;
 	int args[3];
 
+	/* Verify pointers are valid */
+	for(int i = 0; i < 4; i++) {
+		if(check_valid_addr(f->esp + i)) {
+			thread_exit();
+		}
+	}
+
 	/* Get the system call */
 	copy_in(&call_nr, f->esp, sizeof call_nr);
 	if (call_nr >= sizeof syscall_table / sizeof *syscall_table)
@@ -85,6 +94,12 @@ syscall_handler (struct intr_frame *f UNUSED)
 	
 	/* Execute the system call and set the return value */
 	f->eax = sc->func(args[0], args[1], args[2]);
+}
+
+/* Check if given memory address is valid */
+bool
+check_valid_addr(uint32_t *addr) {
+	return (addr != NULL) && is_user_vaddr(addr);
 }
 
 /* Copy a certain section of memory from the user space to the kernel space */
