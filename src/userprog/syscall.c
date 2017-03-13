@@ -128,11 +128,10 @@ sys_halt(void) {
 /* Terminate current user process */
 static void
 sys_exit(int status) {
-	pid_t cur = getpid();
+	printf("%s: exit(%d)\n", thread_name(), status);
 	if (getppid() != NULL) {
-		//give parent status
+		thread_exit();
 	}
-	// printf("%s: exit(%d)\n", cmd_line passed in process_exec, status);
 }
 
 /* Run given executable */
