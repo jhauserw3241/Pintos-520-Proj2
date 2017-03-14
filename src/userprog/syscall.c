@@ -16,5 +16,6 @@ static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
   printf ("system call!\n");
+	ASSERT(1 == 2);
   thread_exit ();
 }

@@ -28,7 +28,8 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
-  char *fn_copy;
+	printf("Start process_execute\n");
+	char *fn_copy;
   tid_t tid;
 
   /* Make a copy of FILE_NAME.
@@ -50,6 +51,8 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
+	printf("Start start_process\n");
+
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
@@ -88,6 +91,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+	printf("Start process_wait\n");
   return -1;
 }
 
@@ -95,6 +99,7 @@ process_wait (tid_t child_tid UNUSED)
 void
 process_exit (void)
 {
+	printf("Start process_exit\n");
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
@@ -122,6 +127,8 @@ process_exit (void)
 void
 process_activate (void)
 {
+	// Adding print statements in this function will break the program
+
   struct thread *t = thread_current ();
 
   /* Activate thread's page tables. */
@@ -208,6 +215,8 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
+	printf("Start load\n");
+
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -429,6 +438,8 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp) 
 {
+	printf("Start setup_stack\n");
+
   uint8_t *kpage;
   bool success = false;
 
