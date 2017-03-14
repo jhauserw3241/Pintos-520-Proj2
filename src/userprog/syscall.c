@@ -230,7 +230,9 @@ static void
 sys_seek(int fd, unsigned position) {
 	struct file *file = get_file_by_id(fd);
 	if(file != NULL) {
+		lock_acquire(&fs_lock);
 		return file_seek(file, position);
+		lock_release(&fs_lock);
 	}
 }
 
@@ -249,7 +251,9 @@ static void
 sys_close(int fd) {
 	struct file *file = get_file_by_id(fd);
 	if(file != NULL) {
+		lock_acquire(&fs_lock);
 		file_close(file);
+		lock_release(&fs_lock);
 	}
 }
 
