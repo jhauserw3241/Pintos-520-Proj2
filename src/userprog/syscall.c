@@ -144,7 +144,7 @@ sys_exec(const char *cmd_line) {
 /* Wait for child process */
 static int
 sys_wait(pid_t pid) {
-	//TODO
+	process_wait(pid);
 }
 
 /* Create new file */

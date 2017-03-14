@@ -20,6 +20,15 @@
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp, char** save_ptr);
+rel_t *head = NULL;
+
+void add_child(child_t c);
+void add_child_to_end(child_t c);
+bool check_rel(rel_t rel, child_t c);
+void update_children(child_t c, rel_t rel);
+child_t start_child_list(rel_t rel);
+child_t get_child_before(child_t c);
+bool remove_child(child_t c);
 
 struct
 /* Starts a new thread running a user program loaded from
@@ -84,6 +93,78 @@ start_process (void *file_name_)
   NOT_REACHED ();
 }
 
+void 
+add_child(rel_t rel){
+	if(head == NULL){
+		start_child_list(rel);
+	}
+	else{
+		add_child_to_end(rel->child);
+	}
+}
+
+void
+add_child_to_end(child_t c){
+	child_t *current = head;
+	while(current->next != NULL){
+		current = current->next;
+	}
+	current->next = malloc(sizeof(child_t));
+	current->next->id = c->id;
+	cuurent->next->called = c->called;
+	current->next->next = NULL;
+}
+
+bool
+check_rel(rel_t rel, child_t c){
+	if(rel->child->id == c->id){
+		update_children(c, rel);
+	}
+	else{
+		return false;
+	}
+
+}
+
+void
+update_children(child_t c, rel_t rel){
+
+}
+
+child_t
+start_child_list(rel_t rel){
+	head = malloc(sizeof(child_t));
+	if(head == NULL){
+		return;
+	}
+	head->id = rel->child->id;
+	head->called = rel->child->called;
+	head->next = NULL;
+}
+
+child_t
+get_child_before(child_t c){
+	child_t *current = head;
+	while(current->next != NULL){
+		if(current->next == c){
+			return current;
+		}
+		current = current->next;
+	}
+	return NULL;
+}
+
+bool
+remove_child(child_t c){
+	child_t *current = get_child_before(c);
+	if(current->id == NULL){
+		return false;
+	}
+	child_t *temp = current->next;
+	current->next = temp->next;
+	return true;
+}
+
 /* Waits for thread TID to die and returns its exit status.  If
    it was terminated by the kernel (i.e. killed due to an
    exception), returns -1.  If TID is invalid or if it was not a
@@ -96,7 +177,15 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid)
 {
-  return -1;
+   while(true)
+   {
+	if(!is_parent_child(child_tid))
+ 	   return -1;
+	else if(called)
+	   return -1;
+	else if(killed)
+	   return -1;
+   }
 }
 
 /* Free the current process's resources. */
