@@ -31,6 +31,7 @@ process_execute (const char *file_name)
 	printf("Start process_execute\n");
 	char *fn_copy;
   tid_t tid;
+	char *save_ptr, *pname;
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -39,8 +40,10 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+	pname = strtok_r(file_name, " ", &save_ptr);
+
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (pname, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -56,6 +59,9 @@ start_process (void *file_name_)
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
+	//char *save_ptr;
+
+	//file_name = strtok_r(file_name, " ", &save_ptr);
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -63,6 +69,8 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
+
+	printf("Is process loading succesfully? %d\n", success);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -202,7 +210,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (void **esp, char *file_name);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -213,7 +221,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
    and its initial stack pointer into *ESP.
    Returns true if successful, false otherwise. */
 bool
-load (const char *file_name, void (**eip) (void), void **esp) 
+load (const char *file_name, void (**eip) (void), void **esp)
 {
 	printf("Start load\n");
 
@@ -311,8 +319,11 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (esp, file_name))
     goto done;
+
+	printf("Successfully setup stack\n");
+	hex_dump(0, esp, 30, true);
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
@@ -436,7 +447,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (void **esp, char *file_name) 
 {
 	printf("Start setup_stack\n");
 
@@ -452,6 +463,79 @@ setup_stack (void **esp)
       else
         palloc_free_page (kpage);
     }
+
+
+	// Inspiration goes here
+	char *cmd;
+	char *save_ptr;
+	int argv_size = 2;
+	int argc = 0, total_length = 0;
+	char **argv = malloc(argv_size * sizeof(char *));
+
+	// Get system function index
+	cmd = strtok_r(file_name, " ", &save_ptr);
+	
+	// Get args
+	while(cmd != NULL) {
+		total_length += strlen(cmd) + 1;
+
+		// Allocate stack frame
+		*esp -= strlen(cmd) + 1;
+		argv[argc] = *esp;
+		argc++;
+
+    /*
+		if(argc >= 64)
+		{
+			free(argv);
+			return false;
+		}*/
+
+		// Resize argv if exceeded
+		if (argc >= argv_size)
+		{
+			argv_size *= 2;
+			argv = realloc(argv, argv_size * sizeof(char*));
+		}
+
+		// Push to args to stack
+		memcpy(*esp, cmd, strlen(cmd) + 1);
+
+		// Get next args
+		cmd = strtok_r(NULL, " ", &save_ptr);
+	}
+
+	// Align word size to 4
+	*esp = *esp - 4 + total_length % 4;
+	
+	// Set the last element
+	argv[argc] = 0;
+
+	// Push address of syscall index and args to stack in reverse order
+	for(int i = argc; i >= 0; i--) {
+		// Make space on stack
+		*esp -= sizeof(char*);
+
+		// Push data on stack
+		memcpy(*esp, &argv[i], sizeof(char*));
+	}
+
+	// Push argv address
+	cmd = *esp;
+	*esp -= sizeof(char**);
+	memcpy(*esp, &cmd, sizeof(char**));
+
+	// Push count of argv list
+	*esp -= sizeof(int);
+	memcpy(*esp, &argc, sizeof(int));
+
+	// Push byte right after argv array as return address
+	*esp -= sizeof(void *);
+	memcpy(*esp, &argv[argc], sizeof(void*));
+
+	// Free memory
+	free(argv);
+
   return success;
 }
 
