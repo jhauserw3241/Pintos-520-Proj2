@@ -8,7 +8,7 @@
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
-static void kill (struct intr_frame *);
+static bool kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
 
 /* Registers handlers for interrupts that can be caused by user
@@ -68,7 +68,7 @@ exception_print_stats (void)
 }
 
 /* Handler for an exception (probably) caused by a user process. */
-static void
+static bool
 kill (struct intr_frame *f) 
 {
   /* This interrupt is one (probably) caused by a user process.
@@ -106,6 +106,7 @@ kill (struct intr_frame *f)
              f->vec_no, intr_name (f->vec_no), f->cs);
       thread_exit ();
     }
+   return true;
 }
 
 /* Page fault handler.  This is a skeleton that must be filled in
