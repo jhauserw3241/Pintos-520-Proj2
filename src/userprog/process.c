@@ -484,23 +484,23 @@ setup_stack (void **esp, const char* file_name)
     }
 
     //push to args to stack
-    memcmp(*esp, token, strlen(token) + 1);
+    memcpy(*esp, token, strlen(token) + 1);
 
     //get next args
     token = strtok_r (NULL, " ", &save_ptr);
   }
 
-  //set the last element to NULL pointer sentinel
-  argv[argc] = 0;
-
   // align word size to 4
   *esp = *esp - 4 + total_length % 4;
+
+  //set the last element to NULL pointer sentinel
+  argv[argc] = 0;
 
   //push addresses of args to stack in reverse order
   for (i = argc; i >= 0; i--)
   {
     *esp -= sizeof(char*);
-    memcmp(*esp, &argv[i], sizeof(char*));
+    memcpy(*esp, &argv[i], sizeof(char*));
   }
 
   //push argv
