@@ -37,11 +37,11 @@ struct exec_info
 tid_t
 process_execute (const char *file_name) 
 {
-	printf("Start process_execute\n");
-	printf("File name: %s\n", file_name);
+	//printf("Start process_execute\n");
+	//printf("File name: %s\n", file_name);
 
 
-	char *fn_copy;
+	//char *fn_copy;
   tid_t tid;
 	char *save_ptr, *pname;
 	char thread_name[16];
@@ -53,7 +53,7 @@ process_execute (const char *file_name)
 	strlcpy(thread_name, file_name, sizeof thread_name);
   strtok_r(thread_name, " ", &save_ptr);
 
-	printf("Thread name: %s\n", thread_name);
+	//printf("Thread name: %s\n", thread_name);
 
 	tid = thread_create(thread_name, PRI_DEFAULT, start_process, &exec);
 	if(tid != TID_ERROR)
@@ -92,10 +92,10 @@ static void
 start_process (void *exec_)
 {
 	
-	printf("Start start_process\n");
+	//printf("Start start_process\n");
 	struct exec_info *exec = exec_;
 	
-	printf("File name: %s\n", exec->file_name);
+	//printf("File name: %s\n", exec->file_name);
 
 //  char *file_name = file_name_;
   struct intr_frame if_;
@@ -111,7 +111,7 @@ start_process (void *exec_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (exec->file_name, &if_.eip, &if_.esp);
 
-	printf("Is process loading succesfully? %d\n", success);
+	//printf("Is process loading succesfully? %d\n", success);
 
 
 	///* Initialize interrupt frame and load executable */
@@ -127,32 +127,41 @@ start_process (void *exec_)
 		success = exec->wait_status != NULL;
 	}
 
-	printf("Hello\n");
+	//printf("Hello\n");
 
 	if(success)
 	{
-		printf("Before lock creation\n");
+		//printf("Before lock creation\n");
 	  lock_init(&exec->wait_status->lock);
-		printf("After lock creation\n");
+		//printf("After lock creation\n");
 	  exec->wait_status->ref_cnt = 2;
-		printf("Before grab tid\n");
+		//printf("Before grab tid\n");
 	  exec->wait_status->tid = thread_current()->tid;
 	  exec->wait_status->exit_code = -1;
 		sema_init(&exec->wait_status->dead, 0);
-		printf("After sucess handling\n");
+		//printf("After sucess handling\n");
 	}
 
-	printf("Middle of start_process\n");
+	//printf("Middle of start_process\n");
 
 	exec->success = success;
 	sema_up(&exec->load_done);
-  
-	printf("Almost %d\n", success);
+
+
+	
+//	hex_dump(0, if_.esp, (int)((size_t) PHYS_BASE - (size_t) if_.esp), true);
+
+	//printf("Almost %d\n", success);
+
+//	printf("hello\n");
+
+	//printf("Success check: %d\n", !success);
 
 	if(!success)
+		//printf("Fail and exit thread\n");
 		thread_exit();
 
-	printf("End of processing in start_process\n");
+//	printf("End of processing in start_process\n");
 
   ///* If load failed, quit. */
   //palloc_free_page (exec->file_name);
@@ -166,9 +175,9 @@ start_process (void *exec_)
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
-  printf("Almost there\n");
+  //printf("Almost there\n");
 	NOT_REACHED ();
-	printf("End of start process\n");
+	//printf("End of start process\n");
 }
 
 /* Waits for thread TID to die and returns its exit status.  If
@@ -183,17 +192,17 @@ start_process (void *exec_)
 int
 process_wait (tid_t child_tid) 
 {
-	printf("Start process_wait\n");
+	//printf("Start process_wait\n");
 	struct thread *c = thread_current();
 	struct list_elem *child;
 
-	for(child = list_begin(&c->children);child != list_end(&c->children); child = list_next(child))
+	for(child = list_begin(&c->children);child != list_end(&c->children); child = list_remove(child))
 	{
 		struct wait_status *cs = list_entry(child, struct wait_status, elem);
 		if(cs->tid == child_tid)
 		{
 			int exit;
-			list_remove(child);
+//			list_remove(child);
 			sema_down(&cs->dead);
 			exit = cs->exit_code;
 			delete_child(cs);
@@ -224,7 +233,7 @@ delete_child(struct wait_status * cs)
 void
 process_exit (void)
 {
-	printf("Start process_exit\n");
+	//printf("Start process_exit\n");
   struct thread *cur = thread_current ();
   uint32_t *pd;
 	struct list_elem *e, *next;
@@ -242,10 +251,10 @@ process_exit (void)
 	}
 
 	/* Free entries of children list */
-	for(e = list_begin(&cur->children); e != list_end(&cur->children); e = next)
+	for(e = list_begin(&cur->children); e != list_end(&cur->children); e = list_remove(e))
 	{
 		struct wait_status *cs = list_entry(e, struct wait_status, elem);
-		next = list_remove(e);
+		//next = list_remove(e);
 		delete_child(cs);
 	}
 
@@ -360,9 +369,9 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *cmdline, void (**eip) (void), void **esp)
 {
-	printf("Start load\n");
+	//printf("Start load\n");
 
-	printf("Command string: %s\n", cmdline);
+	//printf("Command string: %s\n", cmdline);
 
   struct thread *t = thread_current ();
 	char file_name[NAME_MAX + 2];
@@ -373,7 +382,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   int i;
 	char *cp;
 
-	printf("Before allocate page dir\n");	
+	//printf("Before allocate page dir\n");	
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
@@ -381,7 +390,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
-	printf("Before extract file_name\n");
+	//printf("Before extract file_name\n");
 
 	/* Extract file_name from command line */
 	while(*cmdline == ' ')
@@ -391,11 +400,11 @@ load (const char *cmdline, void (**eip) (void), void **esp)
 	if(cp != NULL)
 		*cp = '\0';
 
-	printf("Before open executable\n");
+	//printf("Before open executable\n");
 
   /* Open executable file. */
-  file = filesys_open (file_name);
-	printf("File name: %s\n", file_name);
+  t->bin_file = file = filesys_open (file_name);
+	//printf("File name: %s\n", file_name);
 
   if (file == NULL) 
     {
@@ -404,7 +413,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
     }
 	file_deny_write(file);
 
-	printf("After open executable\n");
+	//printf("After open executable\n");
 
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
@@ -478,13 +487,13 @@ load (const char *cmdline, void (**eip) (void), void **esp)
         }
     }
 
-	printf("Right before setup_stack\n");
+	//printf("Right before setup_stack\n");
   /* Set up stack. */
   if (!setup_stack (esp, cmdline))
     goto done;
 
-	printf("Successfully setup stack\n");
-	hex_dump(0, *esp, (int)((size_t) PHYS_BASE - (size_t) *esp), true);
+	//printf("Successfully setup stack\n");
+//	hex_dump(0, *esp, (int)((size_t) PHYS_BASE - (size_t) *esp), true);
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
@@ -494,7 +503,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   //file_close (file);
-	printf("Load sucessful\n");
+//	printf("Load sucessful\n");
   return success;
 }
 
@@ -687,7 +696,7 @@ init_cmd_line(uint8_t *kpage, uint8_t *upage, const char *cmd_line, void **esp)
 static bool
 setup_stack (void **esp, char *file_name) 
 {
-	printf("Start setup_stack\n");
+	//printf("Start setup_stack\n");
 
   uint8_t *kpage;
   bool success = false;
@@ -696,8 +705,7 @@ setup_stack (void **esp, char *file_name)
   if (kpage != NULL) 
     {
 			uint8_t *upage = ((uint8_t *)PHYS_BASE) - PGSIZE;
-      success = install_page (upage, kpage, true);
-      if (success)
+      if (install_page (upage, kpage, true))
         //*esp = PHYS_BASE;
 				success = init_cmd_line(kpage, upage, file_name, esp);
       else
