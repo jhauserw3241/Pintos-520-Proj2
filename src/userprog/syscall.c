@@ -1,47 +1,15 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
-#include "threads/vaddr.h"
-#include "userprog/process.h"
-#include "filesys/filesys.h"
 
-/* Variables to keep track of files being used */
-file_node *head = NULL;
-int nextFileId = 2;
-
-/* Private function declarations */
 static void syscall_handler (struct intr_frame *);
-
-bool check_valid_addr(uint32_t *addr);
-void copy_in(unsigned *var, uint32_t *start, int size);
-char * copy_in_string(const char *uname);
-
-void add_file(const char *name, struct file_descriptor fd);
-void update_file_list(const char *name, struct file_descriptor fd);
-void update_file_id_list(file_node *current, struct file_descriptor fd);
-file_node start_file_list(const char *name, struct file_descriptor fd);
-void add_file_to_end(const char *name, struct file_descriptor fd);
-fd_node * start_fd_list(struct file_descriptor fd);
-void add_fd_to_end(fd_node *head, struct file_descriptor fd);
-bool is_fd_in_list(fd_node *head, int id);
-struct file * get_file_by_id(int id);
-struct file_elem get_file_elem_by_id(int id);
-struct file_elem get_file_elem_by_name(const char *name);
-file_node * get_file_node(const char *name);
-file_node * get_file_node_before(const char *name);
-struct file_elem create_file_elem(const char *name, struct file_descriptor fd);
-bool remove_file_node(const char *name);
-
-/* Function definitions */
 
 void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
-  lock_init(&fs_lock);
 }
 
 static void
